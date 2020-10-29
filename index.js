@@ -17,21 +17,26 @@ function getFile(pathFile, element , pathIndex){
         let res = path.resolve(catalogPath[key]);
         fs.stat(res, (err, file) =>{// Смотрим в папку или файл
             if(file.isDirectory()){ // Проверяем если ли папки в папке
-                // getFile(res, element,pathIndex ,pathIndex);
+                getFile(res, element,pathIndex ,pathIndex);
             } 
         })
 
         let name =  GenetatorName(catalogPath[key], pathIndex); // Создание нового имени
-        let nameSearchNews = resetData(name, pathIndex.length);
-        let catalogPathSearch  = resetData(catalogPath[key], pathIndex.length);
-        if(key == 1){
-            console.log("1");
-            SearchFile(catalogPathSearch, nameSearchNews,pathIndex);
-        }
+        fs.stat(catalogPath[key], (err, file) =>{
+             if(file.isFile()) {
+                let nameSearchNews = resetData(name, pathIndex.length);
+                nameSearchNews = NameString(nameSearchNews);
+                let catalogPathSearch  = resetData(catalogPath[key], pathIndex.length);
+                catalogPathSearch = NameString(catalogPathSearch);
+                SearchFile(catalogPathSearch, nameSearchNews,pathIndex);  
+            }
+        }) 
+        break;
     }
 }
 
 function SearchFile(search,  replace, pathFile){
+    // console.log(search);
     let catalogPath =  fs.readdirSync(pathFile).map(fileName => { // Путь к файлу
         return path.join(pathFile, fileName);
     })
@@ -39,10 +44,11 @@ function SearchFile(search,  replace, pathFile){
     for (const key in catalogPath) {
         fs.stat(catalogPath[key], (err, file) =>{
             if(file.isFile()){
-                fs.readFile(catalogPath[key], "utf8" , (err, data)=>{
-                    fs.writeFile("../index.js", data);
-                });
-                 
+                var text = fs.readFileSync(catalogPath[key], 'utf8');  
+                let searchName = "@/components/" + search;
+                let RegExp1  = new RegExp(`${searchName}/g`);
+                var textNews = text.replace(RegExp1, replace);  
+                // fs.appendFileSync(catalogPath[key], textNews);      
             }
         });
         let res = path.resolve(catalogPath[key]);
@@ -74,7 +80,8 @@ function PathString(arr){
     return arr.join("\\");
 }
 function NameString(str){
-    // console.log(String(str.replace(/\\/g, "/")));
+    // console.log(String(str.replace(/\\/g, "/")) );
+    return String(str.replace(/\\/g, "/"))
 }
 function StrtoLowerCase(str){
     str.forEach((element, index) => {
