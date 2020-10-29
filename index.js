@@ -1,6 +1,7 @@
 let url = "C:\\Users\\semenov\\Desktop\\test\\pantusNuxt";
 const fs = require("fs");
-let document = ["components"];
+let document = ["components" ,"mixins"];
+let SeacrhElement = ["components" ,"mixins", "layouts", "pages"];
 const path = require('path')
 
 
@@ -14,52 +15,86 @@ function getFile(pathFile, element , pathIndex){
         if(catalogName[key] == "README.md"){
             continue;
         }
-        let res = path.resolve(catalogPath[key]);
-        fs.stat(res, (err, file) =>{// Смотрим в папку или файл
-            if(file.isDirectory()){ // Проверяем если ли папки в папке
-                getFile(res, element,pathIndex ,pathIndex);
-            } 
-        })
-
-        let name =  GenetatorName(catalogPath[key], pathIndex); // Создание нового имени
         fs.stat(catalogPath[key], (err, file) =>{
-             if(file.isFile()) {
+            if(file.isDirectory()){ // Проверяем если ли папки в папке
+                let res = path.resolve(catalogPath[key]);
+                getFile(res, element,pathIndex ,pathIndex);
+            }else  if(file.isFile()) {
+                let name =  GenetatorName(catalogPath[key], pathIndex); // Создание нового имени
                 let nameSearchNews = resetData(name, pathIndex.length);
                 nameSearchNews = NameString(nameSearchNews);
                 let catalogPathSearch  = resetData(catalogPath[key], pathIndex.length);
                 catalogPathSearch = NameString(catalogPathSearch);
-                SearchFile(catalogPathSearch, nameSearchNews,pathIndex);  
-            }
+                SeacrhElement.forEach(elements => {
+                    let path = url + "\\" + elements;
+                    SearchFile(catalogPathSearch, nameSearchNews,path, element);  
+                });
+                // fs.renameSync(catalogPath[key], name);
+            }   
         }) 
-        break;
+         // Создание нового имени;
     }
 }
 
-function SearchFile(search,  replace, pathFile){
+function SearchFile(search,  replace, pathFile, element){
     // console.log(search);
     let catalogPath =  fs.readdirSync(pathFile).map(fileName => { // Путь к файлу
         return path.join(pathFile, fileName);
     })
-
     for (const key in catalogPath) {
         fs.stat(catalogPath[key], (err, file) =>{
             if(file.isFile()){
-                var text = fs.readFileSync(catalogPath[key], 'utf8');  
-                let searchName = "@/components/" + search;
-                let RegExp1  = new RegExp(`${searchName}/g`);
-                var textNews = text.replace(RegExp1, replace);  
-                // fs.appendFileSync(catalogPath[key], textNews);      
+                let searchName;
+                let replaceName; 
+                if(element != "store"){ //  не Папка store
+                    searchName = `@/${element}/${search}`;
+                    replaceName = `@/${element}/${replace}`;
+                    if(element == "components"){ // Это файл .vue
+                        searchName = searchName.substring(0, searchName.length - 4);
+                        replaceName = replaceName.substring(0, replaceName.length - 4);
+                    }else{
+                        searchName = searchName.substring(0, searchName.length - 3);
+                        replaceName = replaceName.substring(0, replaceName.length - 3);   
+                    }
+                    GoDataReset(catalogPath[key] , searchName, replaceName);
+                }
             }
         });
         let res = path.resolve(catalogPath[key]);
         fs.stat(res, (err, file) =>{// Смотрим в папку или файл
             if(file.isDirectory()){ // Проверяем это  папка
-                SearchFile(search, replace,res);
+                SearchFile(search, replace,res, element);
             } 
         })
     }
 }
 
+function ReNameFile(pathFile, element , pathIndex){
+    catalogName =  fs.readdirSync(pathFile); // Название файла
+    let catalogPath =  fs.readdirSync(pathFile).map(fileName => { // Путь к файлу
+        return path.join(pathFile, fileName);
+    })
+    for (const key in catalogPath) {
+        if(catalogName[key] == "README.md"){
+            continue;
+        }
+        fs.stat(catalogPath[key], (err, file) =>{
+            let name =  GenetatorName(catalogPath[key], pathIndex); // Создание нового имени
+            fs.renameSync(catalogPath[key], name); 
+            if(file.isDirectory()){ // Проверяем если ли папки в папке
+                let res = path.resolve(name);
+                getFile(res, element,pathIndex ,pathIndex);
+            }
+        }) 
+         // Создание нового имени;
+    }
+}
+function GoDataReset(file, search,replace){
+    var text = fs.readFileSync(file, 'utf8');
+    let RegExp1  = new RegExp(search, "gi"); 
+    let textNews = text.replace(RegExp1, replace);
+    fs.writeFileSync(file, textNews);  
+}
 function resetData(str ,length){
     return str.slice(length + 1);
 }
@@ -104,3 +139,9 @@ document.forEach(element => {
     let path = url + "\\" + element;
     getFile(path,element , path);
 });
+document.forEach(element => {
+    let path = url + "\\" + element;
+    ReNameFile(path,element , path);
+});
+
+ 
