@@ -29,7 +29,6 @@ function getFile(pathFile, element , pathIndex){
                     let path = url + "\\" + elements;
                     SearchFile(catalogPathSearch, nameSearchNews,path, element);  
                 });
-                // fs.renameSync(catalogPath[key], name);
             }   
         }) 
          // Создание нового имени;
@@ -70,7 +69,7 @@ function SearchFile(search,  replace, pathFile, element){
 }
 
 function ReNameFile(pathFile, element , pathIndex){
-    catalogName =  fs.readdirSync(pathFile); // Название файла
+    let catalogName =  fs.readdirSync(pathFile); // Название файла
     let catalogPath =  fs.readdirSync(pathFile).map(fileName => { // Путь к файлу
         return path.join(pathFile, fileName);
     })
@@ -78,15 +77,15 @@ function ReNameFile(pathFile, element , pathIndex){
         if(catalogName[key] == "README.md"){
             continue;
         }
-        fs.stat(catalogPath[key], (err, file) =>{
-            let name =  GenetatorName(catalogPath[key], pathIndex); // Создание нового имени
-            fs.renameSync(catalogPath[key], name); 
+        let name =  GenetatorName(catalogPath[key],  pathIndex); // Создание нового имени
+        fs.renameSync(catalogPath[key] , name);
+        let res = path.resolve(name);
+        fs.stat(res, (err, file) =>{// Смотрим в папку или файл
             if(file.isDirectory()){ // Проверяем если ли папки в папке
-                let res = path.resolve(name);
-                getFile(res, element,pathIndex ,pathIndex);
-            }
-        }) 
-         // Создание нового имени;
+                console.log("isDirectory");
+                ReNameFile(res, element,pathIndex);
+            } 
+        })
     }
 }
 function GoDataReset(file, search,replace){
@@ -139,9 +138,11 @@ document.forEach(element => {
     let path = url + "\\" + element;
     getFile(path,element , path);
 });
+
+
 document.forEach(element => {
-    let path = url + "\\" + element;
-    ReNameFile(path,element , path);
+    // let path = url + "\\" + element;
+    // ReNameFile(path,element , path);
 });
 
  
